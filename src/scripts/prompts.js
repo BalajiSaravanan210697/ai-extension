@@ -185,6 +185,201 @@ export const DEFAULT_PROMPTS = {
 
     Tone:
     - Professional, executable, structured.
+  `,
+
+  /**
+   * Playwright TypeScript Page Object Prompt (No Test Class)
+   */
+  PLAYWRIGHT_TYPESCRIPT_PAGE_ONLY: `
+    Instructions:
+    - Generate ONLY a Playwright TypeScript Page Object Class (no test code).
+    - Use Playwright 1.40+ compatible imports.
+    - Add JSDoc for methods & class.
+    - Use meaningful method names with type annotations.
+    - Do NOT include explanations or test code.
+    - Use async/await patterns.
+
+    Context:
+    DOM:
+    \`\`\`html
+    \${domContent}
+    \`\`\`
+
+    Example:
+    \`\`\`typescript
+    import { Page, Locator } from '@playwright/test';
+
+    /**
+     * Page Object for Component Page
+     */
+    export class ComponentPage {
+      readonly page: Page;
+      readonly usernameField: Locator;
+      readonly passwordField: Locator;
+      readonly loginButton: Locator;
+
+      constructor(page: Page) {
+        this.page = page;
+        this.usernameField = page.locator('#username');
+        this.passwordField = page.locator('#password');
+        this.loginButton = page.locator('button:has-text("Login")');
+      }
+
+      async fillUsername(username: string): Promise<void> {
+        await this.usernameField.fill(username);
+      }
+
+      async fillPassword(password: string): Promise<void> {
+        await this.passwordField.fill(password);
+      }
+
+      async clickLogin(): Promise<void> {
+        await this.loginButton.click();
+      }
+    }
+    \`\`\`
+
+    Persona:
+    - Audience: Automation engineers using Playwright with TypeScript.
+
+    Output Format:
+    - A single TypeScript class inside a \`\`\`typescript\`\`\` block.
+
+    Tone:
+    - Clean, maintainable, enterprise-ready.
+  `,
+
+  /**
+   * Playwright Cucumber Feature File Only Prompt
+   */
+  PLAYWRIGHT_CUCUMBER_ONLY: `
+    Instructions:
+    - Generate ONLY a Cucumber (.feature) file.
+    - Use Scenario Outline with Examples table.
+    - Make sure every step is relevant to the provided DOM.
+    - Do not combine multiple actions into one step.
+    - Use South India realistic dataset (names, addresses, pin codes, mobile numbers).
+    - Use dropdown values only from provided DOM.
+    - Generate multiple scenarios if applicable.
+
+    Context:
+    DOM:
+    \`\`\`html
+    \${domContent}
+    \`\`\`
+
+    Example:
+    \`\`\`gherkin
+    Feature: Login to Application
+
+    Scenario Outline: Successful login with valid credentials
+      Given I navigate to the login page
+      When I enter "<username>" in the username field
+      And I enter "<password>" in the password field
+      And I click the login button
+      Then I should see the dashboard
+
+    Examples:
+      | username       | password  |
+      | john.doe@email | Test@123  |
+      | admin.user     | Admin@456 |
+    \`\`\`
+
+    Persona:
+    - Audience: BDD testers who only need feature files for Playwright.
+
+    Output Format:
+    - Only valid Gherkin in a \`\`\`gherkin\`\`\` block.
+
+    Tone:
+    - Clear, structured, executable.
+  `,
+
+  /**
+   * Playwright Cucumber with TypeScript Step Definitions
+   */
+  PLAYWRIGHT_CUCUMBER_WITH_TYPESCRIPT_STEPS: `
+    Instructions:
+    - Generate BOTH:
+      1. A Cucumber .feature file.
+      2. A TypeScript step definition class for Playwright.
+    - Do NOT include Page Object code.
+    - Step defs must include Playwright Page setup, explicit waits, and actual Playwright code.
+    - Use Scenario Outline with Examples table (South India realistic data).
+    - Use async/await patterns throughout.
+
+    Context:
+    DOM:
+    \`\`\`html
+    \${domContent}
+    \`\`\`
+    URL: \${pageUrl}
+
+    Example:
+    \`\`\`gherkin
+    Feature: Login to Application
+
+    Scenario Outline: Successful login with valid credentials
+      Given I navigate to the login page
+      When I enter "<username>" in the username field
+      And I enter "<password>" in the password field
+      And I click the login button
+      Then I should see the dashboard
+
+    Examples:
+      | username       | password  |
+      | john.doe@email | Test@123  |
+      | admin.user     | Admin@456 |
+    \`\`\`
+
+    \`\`\`typescript
+    import { Given, When, Then, Before, After } from '@cucumber/cucumber';
+    import { Page, expect, chromium, Browser } from '@playwright/test';
+
+    let page: Page;
+    let browser: Browser;
+
+    Before(async () => {
+      browser = await chromium.launch();
+      page = await browser.newPage();
+      await page.goto('\${pageUrl}');
+    });
+
+    After(async () => {
+      await page.close();
+      await browser.close();
+    });
+
+    Given('I navigate to the login page', async () => {
+      await page.goto('\${pageUrl}');
+    });
+
+    When('I enter {string} in the username field', async (username: string) => {
+      await page.fill('#username', username);
+    });
+
+    When('I enter {string} in the password field', async (password: string) => {
+      await page.fill('#password', password);
+    });
+
+    When('I click the login button', async () => {
+      await page.click('button:has-text("Login")');
+    });
+
+    Then('I should see the dashboard', async () => {
+      const dashboard = page.locator('.dashboard');
+      await expect(dashboard).toBeVisible();
+    });
+    \`\`\`
+
+    Persona:
+    - Audience: QA engineers working with Cucumber & Playwright.
+
+    Output Format:
+    - Gherkin in \`\`\`gherkin\`\`\` block + TypeScript code in \`\`\`typescript\`\`\` block.
+
+    Tone:
+    - Professional, executable, structured.
   `
 };
 
@@ -216,4 +411,7 @@ export const CODE_GENERATOR_TYPES = {
   SELENIUM_JAVA_PAGE_ONLY: 'Selenium-Java-Page-Only',
   CUCUMBER_ONLY: 'Cucumber-Only',
   CUCUMBER_WITH_SELENIUM_JAVA_STEPS: 'Cucumber-With-Selenium-Java-Steps',
+  PLAYWRIGHT_TYPESCRIPT_PAGE_ONLY: 'Playwright-TypeScript-Page-Only',
+  PLAYWRIGHT_CUCUMBER_ONLY: 'Playwright-Cucumber-Only',
+  PLAYWRIGHT_CUCUMBER_WITH_TYPESCRIPT_STEPS: 'Playwright-Cucumber-With-TypeScript-Steps',
 };

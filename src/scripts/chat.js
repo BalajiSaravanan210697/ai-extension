@@ -157,7 +157,14 @@ class ChatUI {
                         const languageMap = {
                             'feature': 'gherkin',
                             'cucumber': 'gherkin',
-                            'bdd': 'gherkin'
+                            'bdd': 'gherkin',
+                            'js': 'javascript',
+                            'ts': 'typescript',
+                            'typescript': 'typescript',
+                            'py': 'python',
+                            'python': 'python',
+                            'cs': 'csharp',
+                            'csharp': 'csharp'
                         };
                         
                         if (languageMap[normalizedLang]) {
@@ -203,8 +210,11 @@ class ChatUI {
                     'bdd': 'gherkin',
                     'js': 'javascript',
                     'ts': 'typescript',
+                    'typescript': 'typescript',
                     'py': 'python',
-                    'cs': 'csharp'
+                    'python': 'python',
+                    'cs': 'csharp',
+                    'csharp': 'csharp'
                 };
                 
                 if (languageMap[validLanguage]) {
@@ -563,6 +573,8 @@ class ChatUI {
             // Default fallback to page object generation
             if (this.isJavaSelenium(lang, eng)) {
                 promptKeys.push('SELENIUM_JAVA_PAGE_ONLY');
+            } else if (this.isPlaywrightTypeScript(lang, eng)) {
+                promptKeys.push('PLAYWRIGHT_TYPESCRIPT_PAGE_ONLY');
             }
             return promptKeys;
         }
@@ -572,18 +584,26 @@ class ChatUI {
             // Both feature and page selected - generate combined output
             if (this.isJavaSelenium(lang, eng)) {
                 promptKeys.push('CUCUMBER_WITH_SELENIUM_JAVA_STEPS');
+            } else if (this.isPlaywrightTypeScript(lang, eng)) {
+                promptKeys.push('PLAYWRIGHT_CUCUMBER_WITH_TYPESCRIPT_STEPS');
             } else {
-                // For non-Java/Selenium combinations, generate separately
+                // For non-supported combinations, generate feature only
                 promptKeys.push('CUCUMBER_ONLY');
                 this.addUnsupportedLanguageMessage(lang, eng);
             }
         } else if (isFeatureChecked) {
             // Feature file only
-            promptKeys.push('CUCUMBER_ONLY');
+            if (this.isPlaywrightTypeScript(lang, eng)) {
+                promptKeys.push('PLAYWRIGHT_CUCUMBER_ONLY');
+            } else {
+                promptKeys.push('CUCUMBER_ONLY');
+            }
         } else if (isPageChecked) {
             // Page object only
             if (this.isJavaSelenium(lang, eng)) {
                 promptKeys.push('SELENIUM_JAVA_PAGE_ONLY');
+            } else if (this.isPlaywrightTypeScript(lang, eng)) {
+                promptKeys.push('PLAYWRIGHT_TYPESCRIPT_PAGE_ONLY');
             } else {
                 this.addUnsupportedLanguageMessage(lang, eng);
             }
@@ -609,14 +629,54 @@ class ChatUI {
 
     // typescript/selenium not supported by the selenium webdriver
 
+    /**
+     * Helper method to check if the combination is TypeScript + Playwright
+     */
+    isPlaywrightTypeScript(language, engine) {
+        return language === 'ts' && engine === 'playwright';
+    }
 
+    /**
+     * Helper method to check if the combination is Python + Playwright
+     */
+    isPlaywrightPython(language, engine) {
+        return language === 'python' && engine === 'playwright';
+    }
+
+    /**
+     * Helper method to check if the combination is C# + Playwright
+     */
+    isPlaywrightCSharp(language, engine) {
+        return language === 'csharp' && engine === 'playwright';
+    }
 
     /**
      * Helper method to show unsupported language/engine combination message
      */
     addUnsupportedLanguageMessage(language, engine) {
-        const message = `⚠️ ${language}/${engine} combination is not yet supported. Only Java/Selenium is currently available.`;
+        const message = `⚠️ ${language}/${engine} combination is not yet supported. Currently supported: Java/Selenium, TypeScript/Playwright.`;
         this.addMessage(message, 'system');
+    }
+
+    /**
+     * Get all supported language/engine combinations
+     */
+    getSupportedCombinations() {
+        return [
+            { language: 'java', engine: 'selenium', name: 'Java + Selenium' },
+            { language: 'ts', engine: 'playwright', name: 'TypeScript + Playwright' }
+        ];
+    }
+
+    /**
+     * Validate if a language/engine combination is supported
+     */
+    isValidLanguageEngineCombination(language, engine) {
+        const lang = language?.toLowerCase() || '';
+        const eng = engine?.toLowerCase() || '';
+        return this.getSupportedCombinations().some(
+            combo => combo.language === lang && combo.engine === eng
+        );
     }
 
     async initializeCodeGeneratorType() {
