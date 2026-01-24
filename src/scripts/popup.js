@@ -5,7 +5,7 @@ initializeAppConfig();
 document.addEventListener('DOMContentLoaded', async () => {
   try {
     // Ensure config is applied
-    
+
     // Initialize connection with content script
     const initializeConnection = async () => {
       try {
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const connectWithRetry = async () => {
           try {
             port = chrome.tabs.connect(tab.id, { name: 'inspector-connection' });
-            
+
             port.onDisconnect.addListener((p) => {
               const error = chrome.runtime.lastError;
               if (error) {
@@ -108,19 +108,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       groq: [
         { value: 'deepseek-r1-distill-llama-70b', label: 'deepseek-r1-distill-llama-70b' },
         { value: 'llama-3.3-70b-versatile', label: 'llama-3.3-70b-versatile' },
-
       ],
       openai: [
         { value: 'gpt-4o', label: 'GPT-4o' },
         { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-
-      ] 
-    };
     
+      ],
+      testleaf: [
+        { value: 'ft:gpt-4o-2024-08-06:testleaf-2::D1WnLDPs', label: 'fine-tuned' }
+      ]
+    };
+
     // Function to update model options based on selected provider
     function updateModelOptions(provider) {
       modelSelect.innerHTML = '<option value="" disabled selected>Select the model...</option>';
-      
+
       if (provider) {
         modelSelect.disabled = false;
         const models = modelsByProvider[provider] || [];
@@ -134,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         modelSelect.disabled = true;
       }
     }
-    
+
     // Handle provider selection
     if (providerSelect) {
       providerSelect.addEventListener('change', (e) => {
@@ -146,14 +148,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateApiKeyVisibility('');  // Hide API key inputs until model is selected
       });
     }
-    
+
     // Save API keys when entered
     if (groqApiKeyInput) {
       groqApiKeyInput.addEventListener('change', (e) => {
         storage.set({ groqApiKey: e.target.value });
       });
     }
-    
+
     if (openaiApiKeyInput) {
       openaiApiKeyInput.addEventListener('change', (e) => {
         storage.set({ openaiApiKey: e.target.value });
@@ -165,7 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         storage.set({ testleafApiKey: e.target.value });
       });
     }
-    
+
     if (modelSelect) {
       modelSelect.addEventListener('change', (e) => {
         storage.set({ selectedModel: e.target.value });
@@ -173,9 +175,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     }
 
-   
-   
-    
+
+
+
     // Function to update API key input visibility
     function updateApiKeyVisibility(selectedModel) {
       const groqContainer = document.getElementById('groqKeyContainer');
@@ -187,27 +189,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         openaiContainer.style.display = 'none';
         testleafContainer.style.display = 'none';
 
-      } else  if (providerSelect.value === 'openai') {
+      } else if (providerSelect.value === 'openai') {
         groqContainer.style.display = 'none';
         openaiContainer.style.display = 'block';
         testleafContainer.style.display = 'none';
-      } else  {
+      } else {
         groqContainer.style.display = 'none';
         openaiContainer.style.display = 'none';
         testleafContainer.style.display = 'block';
       }
     }
-    
+
     // Load saved values
     const result = await new Promise(resolve => {
-      storage.get(['groqApiKey', 'openaiApiKey','testleafApiKey', 'selectedModel', 'selectedProvider'], resolve);
+      storage.get(['groqApiKey', 'openaiApiKey', 'testleafApiKey', 'selectedModel', 'selectedProvider'], resolve);
     });
-    
+
     if (result.selectedProvider && providerSelect) {
       providerSelect.value = result.selectedProvider;
       updateModelOptions(result.selectedProvider);
     }
-    
+
     if (result.groqApiKey && groqApiKeyInput) {
       groqApiKeyInput.value = result.groqApiKey;
     }
@@ -227,10 +229,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const getDomButton = document.getElementById('getDom');
     const toggleInspectorButton = document.getElementById('toggleInspector');
     const copySelectedDomButton = document.getElementById('copySelectedDom');
-    
+
     let isInspectorActive = false;
     let currentPort = null;
-    
+
     if (toggleInspectorButton) {
       toggleInspectorButton.addEventListener('click', async () => {
         try {
@@ -258,14 +260,14 @@ document.addEventListener('DOMContentLoaded', async () => {
               console.log('Error disconnecting old port:', error);
             }
           }
-          
+
           currentPort = chrome.tabs.connect(tab.id, { name: 'inspector-connection' });
           currentPort.onDisconnect.addListener(() => {
             console.log('Inspector connection lost');
             isInspectorActive = false;
             toggleInspectorButton.textContent = 'Toggle Inspector';
           });
-          
+
           const response = await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_INSPECTOR' });
           isInspectorActive = response.isActive;
           toggleInspectorButton.textContent = isInspectorActive ? 'Stop Inspector' : 'Toggle Inspector';
@@ -276,11 +278,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
     }
-    
+
     if (copySelectedDomButton) {
       copySelectedDomButton.addEventListener('click', async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        
+
         const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_SELECTED_DOM' });
         const domContent = document.getElementById('domContent');
         if (domContent && response.dom.length > 0) {
@@ -288,7 +290,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       });
     }
-    
+
     // Listen for element selection updates
     chrome.runtime.onMessage.addListener((message) => {
       if (message.type === 'ELEMENTS_SELECTED' && copySelectedDomButton) {
@@ -300,13 +302,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       getDomButton.addEventListener('click', async () => {
         try {
           const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          
+
           const result = await chrome.scripting.executeScript({
             target: { tabId: tab.id },
             function: () => {
               // Create a clone of the document
               const clone = document.documentElement.cloneNode(true);
-              
+
               // Remove all script tags
               const scripts = clone.getElementsByTagName('script');
               while (scripts.length > 0) {
@@ -355,7 +357,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               return cleanHtml;
             }
           });
-          
+
           const domContent = document.getElementById('domContent');
           if (domContent) {
             domContent.value = result[0].result;
@@ -381,25 +383,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Handle DOM changes
     const domChangesTextarea = document.getElementById('domChanges');
     if (domChangesTextarea) {
-        // Listen for changes from background script
-        chrome.runtime.onMessage.addListener((message) => {
-            if (message.type === 'UPDATE_CHANGES') {
-                const formattedChanges = message.changes
-                    .map(change => {
-                        return `[${change.timestamp}] ${change.type.toUpperCase()}\n` +
-                               `Target: ${change.target.tagName} (${change.target.path})\n` +
-                               (change.added ? `Added: ${change.added.length} nodes\n` : '') +
-                               (change.removed ? `Removed: ${change.removed.length} nodes\n` : '') +
-                               (change.attributeName ? `Attribute: ${change.attributeName} changed from "${change.oldValue}" to "${change.newValue}"\n` : '') +
-                               '-------------------\n';
-                    })
-                    .join('\n');
-                
-                domChangesTextarea.value = formattedChanges;
-                // Auto-scroll to bottom
-                domChangesTextarea.scrollTop = domChangesTextarea.scrollHeight;
-            }
-        });
+      // Listen for changes from background script
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message.type === 'UPDATE_CHANGES') {
+          const formattedChanges = message.changes
+            .map(change => {
+              return `[${change.timestamp}] ${change.type.toUpperCase()}\n` +
+                `Target: ${change.target.tagName} (${change.target.path})\n` +
+                (change.added ? `Added: ${change.added.length} nodes\n` : '') +
+                (change.removed ? `Removed: ${change.removed.length} nodes\n` : '') +
+                (change.attributeName ? `Attribute: ${change.attributeName} changed from "${change.oldValue}" to "${change.newValue}"\n` : '') +
+                '-------------------\n';
+            })
+            .join('\n');
+
+          domChangesTextarea.value = formattedChanges;
+          // Auto-scroll to bottom
+          domChangesTextarea.scrollTop = domChangesTextarea.scrollHeight;
+        }
+      });
     }
 
     // Cleanup when window is closed
